@@ -2,6 +2,7 @@ import { Command } from "commander";
 import { registerClient } from "./commands/client.js";
 import { registerMaintainer } from "./commands/maintainer.js";
 import { registerOrg } from "./commands/org.js";
+import { registerPublish } from "./commands/publish.js";
 import { registerRelease } from "./commands/release.js";
 import type { Register } from "./commands/shared.js";
 import { registerSoul } from "./commands/soul.js";
@@ -48,6 +49,6 @@ export function createProgram(io: Io): Command {
       }
     };
 
-  for (const register of [registerSoul, registerOrg, registerWorld, registerVersion, registerClient, registerMaintainer, registerRelease] satisfies Register[]) register(program, run);
+  for (const register of [registerSoul, registerOrg, registerWorld, registerVersion, registerClient, registerMaintainer, registerRelease, registerPublish] satisfies Register[]) register(program, run);
   return program;
 }

@@ -23,10 +23,13 @@
   },
   "dependencies": {
     "@adasouls/protocol": "0.1.0",
+    "@ipld/car": "^5.4.7",
+    "@web3-storage/car-block-validator": "^1.2.2",
     "canonicalize": "^5.1.0",
     "commander": "^14.0.0",
     "files-from-path": "^1.1.4",
     "ipfs-car": "^3.1.0",
+    "ipfs-unixfs-exporter": "^13.7.3",
     "viem": "^2.56.9"
   },
   "devDependencies": {

@@ -1,10 +1,10 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 import { headCommit } from "../src/commands/release.js";
-import { packBuild } from "../src/ipfs.js";
+import { packBuild, unpackBuild } from "../src/ipfs.js";
 
 let dir: string;
 beforeEach(() => {
@@ -49,6 +49,32 @@ describe("packBuild", () => {
   it("refuses what is not a build", async () => {
     await expect(packBuild(join(dir, "missing"))).rejects.toThrow(/not a directory/);
     await expect(packBuild(build({}))).rejects.toThrow(/has no files/);
+  });
+});
+
+describe("unpackBuild", () => {
+  const files = { "index.html": "<h1>ALDEA</h1>", "assets/app.js": "console.log(1)", ".well-known/world.json": "{}" };
+
+  it("writes back exactly the files that were packed", async () => {
+    const car = join(dir, "build.car");
+    const packed = await packBuild(build(files), car);
+    const out = join(dir, "out");
+    expect(await unpackBuild(car, out)).toBe(packed.cid);
+    expect(readdirSync(out, { recursive: true }).map(String).sort()).toEqual([".well-known", ".well-known/world.json", "assets", "assets/app.js", "index.html"]);
+    expect(readFileSync(join(out, "assets/app.js"), "utf8")).toBe("console.log(1)");
+    // Packing what came out gives the same CID: that is what `publish` compares with the Atlas
+    expect((await packBuild(out)).cid).toBe(packed.cid);
+  });
+
+  it("refuses a CAR whose content was altered", async () => {
+    const car = join(dir, "build.car");
+    await packBuild(build(files), car);
+    const bytes = readFileSync(car);
+    const at = bytes.indexOf("console.log(1)");
+    expect(at).toBeGreaterThan(0);
+    bytes[at] = "C".charCodeAt(0);
+    writeFileSync(car, bytes);
+    await expect(unpackBuild(car, join(dir, "out"))).rejects.toThrow();
   });
 });
 

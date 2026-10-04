@@ -70,6 +70,31 @@ fork-kit release --world <worldId> --dir packages/client/dist --semver 0.2.0 \
 - `--dry-run` prints the CID without registering anything. `--chain-id` defaults to the network's, and
   `--world-address` to `world.address` in the `--deployment` file.
 
+## Publishing the official version
+
+`publish` prepares the directory a world's site serves, and refuses to prepare anything the world did not make
+official:
+
+```bash
+fork-kit publish --world <worldId> --car client.car --out site \
+  --operator alma:main:org:nocturna --presence-url https://nocturna.example/presence \
+  --if-changed https://nocturna.example
+```
+
+1. It reads the world's official version from the Atlas.
+2. It takes that build's CAR (`--car`: a file, or an http(s) URL such as an IPFS gateway's `?format=car`), checks every
+   block against its hash, unpacks it and recomputes the CID from the files. If that is not the CID the Atlas holds,
+   it stops and `--out` is left as it was.
+3. It writes `/version.json` (what the client claims to be: version id, CID, commit, semver) and, with `--operator`
+   and `--presence-url`, the client manifest at `/.well-known/aldea-world.json`. Both name the build's own CID, so they
+   are added here and are not among the files the CID covers.
+
+`--if-changed <site>` makes it a no-op (`changed: false`) when that site already serves the official version, which
+is what a scheduled job wants. Deploying `--out` to a host is up to you.
+
+A world's Portal reads other worlds' manifest and presence from the browser, so serve both with
+`Access-Control-Allow-Origin: *`.
+
 A version starts as a candidate. Making it the official one is up to the world's governor
 (`AtlasRegistry.setOfficialVersion`), which for a governed world is a multisig or a council, not this tool.
 

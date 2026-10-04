@@ -124,8 +124,10 @@ the wallet method with a Sign-In with Ethereum signature from the key. ALMA Auth
 `--client-id` (default `fork-kit`) with the redirect URI `--redirect-uri` (default
 `http://127.0.0.1/fork-kit/callback`, which is never opened).
 
-The soul is anchored by the key itself, so the key must be the soul's controller. A Resolver that gives every new soul
-a custodial smart account as controller will refuse; anchoring then has to happen from that account.
+The soul is anchored by the key itself, so the key must be the soul's controller: `soul create` asks the Resolver for
+exactly that, and the Resolver agrees for a wallet the soul signs in with. It refuses if the soul already has another
+controller (for example, a custodial account it got by playing from a browser first); that soul has to be anchored
+from that account.
 
 ## Development
 

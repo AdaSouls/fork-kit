@@ -19,7 +19,7 @@ export interface VersionJson {
 }
 
 export const VERSION_PATH = "version.json";
-export const MANIFEST_PATH = ".well-known/aldea-world.json";
+export const MANIFEST_PATH = ".well-known/alma-world.json";
 
 interface OfficialVersion {
   worldId: Hex;
@@ -118,7 +118,7 @@ export const registerPublish: Register = (program, run) => {
             manifest = join(site, MANIFEST_PATH);
             mkdirSync(dirname(manifest), { recursive: true });
             const body = {
-              schema: "aldea-world-client/v1",
+              schema: "alma-world-client/v1",
               worldId,
               versionId: claim.versionId,
               name: options.name ?? world.name,

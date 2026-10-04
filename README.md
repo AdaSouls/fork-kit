@@ -86,7 +86,7 @@ fork-kit publish --world <worldId> --car client.car --out site \
    block against its hash, unpacks it and recomputes the CID from the files. If that is not the CID the Atlas holds,
    it stops and `--out` is left as it was.
 3. It writes `/version.json` (what the client claims to be: version id, CID, commit, semver) and, with `--operator`
-   and `--presence-url`, the client manifest at `/.well-known/aldea-world.json`. Both name the build's own CID, so they
+   and `--presence-url`, the client manifest at `/.well-known/alma-world.json`. Both name the build's own CID, so they
    are added here and are not among the files the CID covers.
 
 `--if-changed <site>` makes it a no-op (`changed: false`) when that site already serves the official version, which

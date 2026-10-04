@@ -84,7 +84,8 @@ export function createContext(options: GlobalOptions, env: NodeJS.ProcessEnv = p
   const network: Network = { ...preset, rpcUrl: options.rpcUrl ?? preset.rpcUrl, resolverUrl: (options.resolver ?? preset.resolverUrl).replace(/\/$/, "") };
 
   if (options.deployment && !existsSync(options.deployment)) throw new Error(`--deployment: ${options.deployment} does not exist`);
-  const fromFile = options.deployment ? railsFrom(JSON.parse(readFileSync(options.deployment, "utf8"))) : {};
+  const deployment = options.deployment ? (JSON.parse(readFileSync(options.deployment, "utf8")) as { world?: { address?: string } }) : undefined;
+  const fromFile = railsFrom(deployment);
   const published = publishedRails(network.chainId);
   const hint = "Pass --deployment <file>, or the address itself";
 
@@ -111,6 +112,8 @@ export function createContext(options: GlobalOptions, env: NodeJS.ProcessEnv = p
     atlas: () => address("AtlasRegistry", options.atlas ?? env.FORK_KIT_ATLAS_ADDRESS ?? fromFile.atlasRegistry ?? published.atlasRegistry, `${hint} with --atlas.`),
     almaRegistry: () =>
       address("AlmaAnchorRegistry", options.almaRegistry ?? env.FORK_KIT_ALMA_REGISTRY_ADDRESS ?? fromFile.almaAnchorRegistry ?? published.almaAnchorRegistry, `${hint} with --alma-registry.`),
+    /** The World contract a deployment file names, when it describes a world and not only the rails. */
+    worldAddress: () => deployment?.world?.address,
     txUrl: (hash: Hex) => (network.explorerUrl ? `${network.explorerUrl}/tx/${hash}` : undefined),
 
     /** Simulates the call (so a revert is reported with its reason before anything is sent), sends it and waits. */

@@ -51,6 +51,25 @@ Each command prints the ids it created, the transaction hash and, on public netw
 WORLD_ID=$(fork-kit --json world register --name "ALDEA Nocturna" --org alma:main:org:nocturna | jq -r .worldId)
 ```
 
+## Releasing a build
+
+`release` does step 4 for you from a build directory: it computes the build's IPFS CID and registers it as a candidate
+version built from the current commit.
+
+```bash
+fork-kit release --world <worldId> --dir packages/client/dist --semver 0.2.0 \
+  --world-address 0x… --engine mud@2.2.23 --car client.car
+```
+
+- The CID is the root of the directory packed as UnixFS (the same one `ipfs-car pack <dir> --hidden` gives), so it
+  depends only on the files: anyone can rebuild the commit and compare.
+- `--car <file>` also writes the build as a CAR file. Pin that file with any IPFS service to make the build reachable
+  by its CID; `release` itself does not upload anything yet.
+- The commit is `HEAD` (or `--git-commit`). With uncommitted changes to tracked files it stops, because the build
+  would not match the commit it is registered with; `--allow-dirty` overrides.
+- `--dry-run` prints the CID without registering anything. `--chain-id` defaults to the network's, and
+  `--world-address` to `world.address` in the `--deployment` file.
+
 A version starts as a candidate. Making it the official one is up to the world's governor
 (`AtlasRegistry.setOfficialVersion`), which for a governed world is a multisig or a council, not this tool.
 

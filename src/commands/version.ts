@@ -1,5 +1,6 @@
 import { isHex, type Hex } from "viem";
-import { atlasAbi, eventArgs } from "../context.js";
+import { atlasAbi, eventArgs, type Context } from "../context.js";
+import type { Result } from "../output.js";
 import { bytes32, evmAddress, txResult, ZERO_32, type Register } from "./shared.js";
 
 /** A full 40-character commit hash, as the 20 bytes the Atlas stores. */
@@ -12,6 +13,34 @@ export function gitCommit(value: string): Hex {
 function positiveInteger(name: string, value: string): bigint {
   if (!/^[1-9]\d*$/.test(value)) throw new Error(`${name}: "${value}" is not a positive integer`);
   return BigInt(value);
+}
+
+export interface VersionInput {
+  world: string;
+  chainId: string;
+  worldAddress: string;
+  gitCommit: string;
+  semver: string;
+  clientCid: string;
+  engine: string;
+  parentVersion?: string;
+}
+
+/** Registers a candidate version in the Atlas and returns its id. */
+export async function registerCandidate(ctx: Context, input: VersionInput): Promise<Result> {
+  const version = {
+    parentVersionId: input.parentVersion ? bytes32("--parent-version", input.parentVersion) : ZERO_32,
+    chainId: positiveInteger("--chain-id", input.chainId),
+    worldAddress: evmAddress("--world-address", input.worldAddress),
+    gitCommit: gitCommit(input.gitCommit),
+    engine: input.engine,
+    semver: input.semver,
+    clientCid: input.clientCid,
+  };
+  const worldId = bytes32("--world", input.world);
+  const receipt = await ctx.send(ctx.atlas(), atlasAbi, "registerVersion", [worldId, version]);
+  const { versionId } = eventArgs<{ versionId: Hex }>(atlasAbi, receipt.logs, "VersionRegistered");
+  return { versionId, worldId, semver: input.semver, clientCid: input.clientCid, gitCommit: version.gitCommit, status: "candidate", ...txResult(ctx, receipt.transactionHash) };
 }
 
 /**
@@ -32,23 +61,5 @@ export const registerVersion: Register = (program, run) => {
     .requiredOption("--client-cid <cid>", "CID of the client build")
     .option("--engine <engine>", "for example mud@2.2.23", "")
     .option("--parent-version <versionId>", "the version this one derives from")
-    .action(
-      run<{ world: string; chainId: string; worldAddress: string; gitCommit: string; semver: string; clientCid: string; engine: string; parentVersion?: string }>(
-        async (ctx, options) => {
-          const version = {
-            parentVersionId: options.parentVersion ? bytes32("--parent-version", options.parentVersion) : ZERO_32,
-            chainId: positiveInteger("--chain-id", options.chainId),
-            worldAddress: evmAddress("--world-address", options.worldAddress),
-            gitCommit: gitCommit(options.gitCommit),
-            engine: options.engine,
-            semver: options.semver,
-            clientCid: options.clientCid,
-          };
-          const worldId = bytes32("--world", options.world);
-          const receipt = await ctx.send(ctx.atlas(), atlasAbi, "registerVersion", [worldId, version]);
-          const { versionId } = eventArgs<{ versionId: Hex }>(atlasAbi, receipt.logs, "VersionRegistered");
-          return { versionId, worldId, semver: options.semver, clientCid: options.clientCid, status: "candidate", ...txResult(ctx, receipt.transactionHash) };
-        },
-      ),
-    );
+    .action(run<VersionInput>(registerCandidate));
 };
